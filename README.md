@@ -1,42 +1,48 @@
-# LAB-10-S3-CROSS-ACCOUNT-REPLICATION
+## LAB-16: S3 Cross-Account Replication
 
-# STEP 1. 
-Source Account – Create Source Bucket
+### What you will learn
+- Configure replication between two AWS accounts  
+- Create IAM Role for S3 replication  
+- Apply correct permissions and policies  
+- Automatically replicate objects across accounts  
 
-In Amazon Web Services console:
+---
 
-S3 → Create Bucket
+## Source Account
 
-Bucket name: source-bucket-123
+### Step 1: Create Source Bucket
+- Go to AWS Console → S3  
+- Click **Create bucket**
 
-Region: Any
+Configuration:
+- Bucket name: `source-bucket-123`
+- Region: Any
+- **Enable Versioning**
 
-Versioning: Enable
+Verify:
+- S3 → source-bucket-123 → Properties → Versioning → Enabled  
 
-Check versioning:
+> Replication will NOT work without versioning.
 
-S3 → source-bucket-123 → Properties → Versioning → Enabled
+---
 
-Replication will not work if versioning is disabled.
-
-# STEP 2
-
-2. Source Account – Create IAM Role
-
-IAM → Roles → Create Role
-
-Trusted entity: S3
+### Step 2: Create IAM Role
+- Go to IAM → Roles → Create role  
+- Trusted entity: **AWS Service**  
+- Use case: **S3**  
 
 Role name:
-
+```
 S3ReplicationRole
+```
 
-# STEP 3. 
+---
 
-Trust Relationship for the Role
+### Step 3: Trust Relationship
 
-Edit Trust Relationship of the role.
+Edit trust relationship of the role:
 
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -49,23 +55,16 @@ Edit Trust Relationship of the role.
     }
   ]
 }
+```
 
+---
 
+### Step 4: Inline Policy (Source Permissions)
 
-This allows S3 to use the role for replication.
-
-# STEP 4. 
-
-IAM Inline Policy for the Role (Source Bucket Permissions)
-
-Attach this inline policy to S3ReplicationRole.
-
-Replace bucket names if needed.
-
-Path:
-
+Go to:
 IAM → Roles → S3ReplicationRole → Add Inline Policy
 
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -95,36 +94,31 @@ IAM → Roles → S3ReplicationRole → Add Inline Policy
     }
   ]
 }
+```
 
+---
 
-This policy allows the role to read from source and write to destination.
+## Destination Account
 
+### Step 5: Create Destination Bucket
+- Go to S3 → Create bucket  
 
-Destination Account
-# step 5.
+Configuration:
+- Bucket name: `destination-bucket-123`
+- **Enable Versioning**
 
-Create Destination Bucket
+> Replication will fail without versioning.
 
-S3 → Create bucket
+---
 
-Bucket name:
-destination-bucket-123
-
-Enable Versioning
-
-Replication will fail without it.
-
-
-# step 6. 
-
-Destination Bucket Policy
+### Step 6: Destination Bucket Policy
 
 Go to:
+S3 → destination-bucket-123 → Permissions → Bucket Policy  
 
-S3 → destination-bucket-123 → Permissions → Bucket Policy
+Replace `SOURCE-ACCOUNT-ID` with actual account ID.
 
-Add policy (replace SOURCE-ACCOUNT-ID).
-
+```json
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -142,67 +136,63 @@ Add policy (replace SOURCE-ACCOUNT-ID).
     }
   ]
 }
+```
 
-This allows the source account role to write objects.
+---
 
-# step 7.
- 
- Create Replication Rule (Source Bucket)
+## Step 7: Create Replication Rule (Source Bucket)
 
 Go to:
-
-S3 → source-bucket-123
-Management → Replication → Create rule
+S3 → source-bucket-123 → Management → Replication → Create rule  
 
 Configuration:
-
-Rule name
-cross-account-replication
-
-Scope
-Entire bucket
-
-Destination
-Another account
-
-Destination bucket
-destination-bucket-123
-
-IAM Role
-S3ReplicationRole
+- Rule name: `cross-account-replication`
+- Scope: **Entire bucket**
+- Destination: **Another account**
+- Destination bucket: `destination-bucket-123`
+- IAM Role: `S3ReplicationRole`
 
 Optional:
+- ✔ Replicate delete markers  
+- ✔ Replicate existing objects  
 
-Replicate delete markers ✔
+Click **Save**
 
-Replicate existing objects ✔ (optional)
+---
 
-Save.
+## Step 8: Test Replication
 
-# step 8. 
+- Upload file in:
+  ```
+  source-bucket-123
+  ```
 
-Test Replication
+Example:
+```
+test.txt
+```
 
-Upload a file in:
-
-source-bucket-123
-
-Example:  test.txt
-Within a few seconds it should appear automatically in:
-
+✅ Within seconds, it should appear in:
+```
 destination-bucket-123
+```
 
-# Common mistakes (very important)
+---
 
-Most labs fail because of these:
+## Common Mistakes (Very Important)
 
-Versioning not enabled in both buckets
+- Versioning not enabled in BOTH buckets  
+- Wrong bucket policy in destination  
+- Missing permissions in IAM role  
+- Incorrect account ID in policy  
+- Missing `/*` in resource ARN  
 
-Wrong bucket policy
+---
 
-IAM role missing ReplicateObject permission
-
-Wrong account ID in policy
+## Final Result
+- Cross-account replication configured  
+- Objects automatically copied to destination  
+- Secure IAM-based access between accounts  
 
 
 
